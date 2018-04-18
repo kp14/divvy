@@ -1,0 +1,101 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+  <meta name="description" content="Divvy">
+  <meta name="author" content="kp">
+
+  <title>Divvy</title>
+
+  <!--<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">-->
+  <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
+</head>
+
+<body role="document">
+
+    <div class="container" role="main">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <ul class=flashes>
+            {% for category, message in messages %}
+                <div class="{{ category }}">
+                    <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+                    {{ message }}
+                </div>
+            {% endfor %}
+            </ul>
+          {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock content %}
+    </div>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+    <script type="text/javascript">
+
+        <!-- http://flask.pocoo.org/docs/0.10/patterns/jquery/ -->
+        $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+        var checkers = [];
+        $('a[name="checker"]').each(function() {
+	        checkers.push($(this).attr('id'));
+        });
+        var colors = ['#f0be60', '#ec6e6e', '#76d3e7', '#c7c7c7', '#6ed895', '#ffee94', '#a8e6cf', '#5a5fbe', '#b5a086', '#ffc7d1'];
+
+        function gatherStats() {
+            $.each(checkers, function(idx, checker){
+                var count = $("input:radio:checked[id=" + checker + "]").length;
+                $("a[id=" + checker + "]").html(count);
+                $.each($("input:radio:checked[id=" + checker + "]"), function(){
+                         $(this).parents( "tr" ).css("background-color", colors[idx]);
+                         });
+                });
+            };
+
+
+        function sendStats(){
+            var d = new Date();
+            var ts = d.toJSON();
+            var files = {timestamp: ts};
+            $.each(checkers, function(idx, checker){
+                console.log('Using checker from sendStats: ' + checker);
+                files[checker] = extractFile(checker);
+                console.log(checker + ": " + files[checker].join());
+                });
+            var res = send(files);
+            return res;
+            };
+
+        function extractFile(checker){
+            var files_per_checker = new Array();
+            $.each($("input:radio:checked[id=" + checker + "]"), function() {
+                    var file = $(this).attr("name");
+                    files_per_checker.push(file);
+                    });
+            return files_per_checker;
+            };
+
+        function send(obj){
+            console.log("Received for send() " + JSON.stringify(obj));
+            $.getJSON($SCRIPT_ROOT + "/_log_files", {
+            files: JSON.stringify(obj)}, function(data) {
+                $("#result").html("<details><summary class='text-" + data.status + "'>" + data.result + "</summary><pre>" + data.log + "</pre></details>");
+                });
+            return false;
+            };
+
+
+
+    </script>
+
+</body>
+</html>

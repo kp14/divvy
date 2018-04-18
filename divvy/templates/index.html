@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="jumbotron">
+  <h2>Divvy up the work on Thursdays</h2>
+  <div class="row">
+    <div class="col-sm-6 col-lg-6 pull-left">
+      <form class="form-inline" action="refresh" method="Post">
+          <button type="submit" class="btn btn-danger">Refresh</button>
+      </form>
+    </div>
+    <div class="col-sm-6 col-lg-6 pull-right">
+      <button type="submit" class="btn btn-primary" onClick="sendStats()">Update Jira with current selections</button>
+      </br>Jira issue to write to: <a href="{{ jira_url }}/browse/{{ jira }}" target="_blank">{{ jira }}</a>
+      </br>
+        <div id="result"><span class="text-info">Nothing logged yet.</span></div>
+    </div>
+  </div>
+</div>
+
+<p>Files assigned to checker -
+    {% for checker in checkers|sort(attribute='given_name') %}
+        {{ checker.given_name }}: <a name="checker" id="{{checker.given_name}}">0</a>&emsp;
+    {% endfor %}
+</p>
+
+<div id="tabs">
+  <ul class="nav nav-tabs">
+    <li><a data-toggle="tab" href="#tabs-1">Folders</a></li>
+    <li><a data-toggle="tab" href="#tabs-2">References</a></li>
+  </ul>
+  <div class="tab-content">
+      <div id="tabs-1" class="tab-pane fade in active">
+
+        {% for folder in folders %}
+
+              {% if folder.files %}
+                    <h4>{{ folder.path }} <span class="label label-default">Entries: {{ folder_count[folder.path] }}</span></h4>
+                    <table id="{{ folder.path }}" class="table table-striped table-condensed">
+                        <tr>
+                            <th style="width:200px">File</th>
+                            <th>Entries</th>
+
+                            {% for checker in checkers %}
+                            <th>Checker&emsp;</th>
+                            {% endfor %}
+                        </tr>
+                    {% for file in folder.files|sort(attribute='filename') %}
+                        <tr>
+                            <td>{{ file.filename }}</td>
+                            <td align="center"  data-type="count">{{ file.entry_count }}</td>
+
+                            {% for checker in checkers|sort(attribute='given_name') %}
+                                <td>
+                                        <label>
+                                        <input type="radio" name="{{ file.filename  }}" id="{{ checker.given_name }}" onClick="gatherStats()">
+                                        {{ checker.given_name }}
+                                        </label>
+                                </td>
+                            {% endfor %}
+
+                        </tr>
+                    {% endfor %}
+                    </table>
+              {% endif %}
+
+
+        {% endfor %}
+
+      </div>
+      <div id="tabs-2" class="tab-pane fade">
+          <table class="table table-striped table-condensed">
+              <tr>
+                  <th>Name</th>
+                  <th>New PMIDs</th>
+                  <th>Known PMIDs (no large scale)</th>
+              </tr>
+              {% for curator in curators %}
+                {% if curator.submitted_files %}
+                    <tr>
+                        <td>{{ curator.given_name }}</td>
+                        <td>
+                            {% for pmid in ref_by_cur[curator.given_name] %}
+                                <a href="http://europepmc.org/abstract/MED/{{ pmid }}" target="_blank">{{ pmid }}</a>
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {% for pmid in ref_by_cur_known[curator.given_name] %}
+                                <a href="http://europepmc.org/abstract/MED/{{ pmid }}" target="_blank">{{ pmid }}</a>
+                            {% endfor %}
+                        </td>
+                    </tr>
+                {% endif %}
+              {% endfor %}
+          </table>
+          <h4><span class="label label-default">New PMIDs: {{ ref_count }}</span></h4>
+        PMIDs from resubmitted files are filtered out as are PMIDs which already are in Swiss-Prot.
+           </div>
+      </div>
+</div>
+<hr>
+<a href="/admin/"><span class="glyphicon glyphicon-wrench"></span></a>
+{% endblock content %}

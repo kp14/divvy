@@ -1,0 +1,23 @@
+{% extends 'admin/master.html' %}
+
+{% block body %}
+<p>Version: {{ config.VERSION }}</p>
+<p>PMIDs gathered when: {{ config.OLD_PMIDS_FILE_MODIFIED | default('-') }}</p>
+<p>This is the administrative panel for Divvy. It allows performing maintenance and configuration tasks.</p>
+<p>The <strong>Curator</strong> tab has an editable list of all the curators on the team.
+    In order for a team member to be considered by Divvy, she has to be listed.
+    The list is editable.
+    <strong>Checker</strong> marks whether a curator participates in QA.
+</p>
+<p>The <strong>Folder</strong> tab lists paths to all the folders Divvy is searching for files to check in.
+    The paths reflect the path mapping on the server!
+    The list is editable.
+</p>
+<p>The <strong>File</strong> tab lists files currently in Divvy's database. This does not need to be touched normally.</p>
+<div>
+    <form class="form-inline" action="reload_pmid" method="Post">
+          <button type="submit" class="btn btn-primary">Reload PMIDs from Swiss-Prot</button>
+    </form>
+</div>
+<a href="/">Back to Divvy</a>
+{% endblock %}
