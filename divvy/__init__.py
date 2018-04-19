@@ -13,12 +13,14 @@ from logging.handlers import RotatingFileHandler
 import os
 import peewee
 from flask import Flask
+from .util import get_jira_credentials
 
 
 app = Flask(__name__)
 run_status = os.environ.get('DIVVY_RUN', 'Development')
 app.config.from_object('divvy.config.{}'.format(run_status))
 
+get_jira_credentials(app)
 
 app.logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter(app.config['LOG_FORMAT'])

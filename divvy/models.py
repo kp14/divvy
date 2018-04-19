@@ -203,49 +203,22 @@ def count_new_references():
     return ref_count[0].count
 
 
-def _jira_credentials_from_netrc():
-    """Retrieve login credentials for JIRA instance from .netrc file.
-
-    Returns:
-        tuple: login name and password
-
-    Raises:
-        netrc.NetrcParseError: If .netrc file cannot be parsed.
-
-    """
-    try:
-        nrc = netrc.netrc()
-        app.logger.info('Read netrc file.')
-    except (netrc.NetrcParseError, OSError):
-        raise
-    else:
-        login, _, pwd = nrc.hosts[app.config['JIRA_URL']]
-        return (login, pwd)
-
-
 def add_jira_comment(comment):
     """Log data to JIRA.
 
-    The JIRA instance and issue are specified via config.py.
+    The JIRA instance, issue and credentials are specified via config.py.
 
     Returns:
         str: An error or a success message.
-
-
     """
-    try:
-        login, pwd = _jira_credentials_from_netrc()
-    except netrc.NetrcParseError:
-        app.logger.error('Error parsing netrc file.')
-        return 'Error: Jira login credentials unavailable. Click here!'
-    except OSError:
-        app.logger.error('Error finding netrc file.')
-        return 'Error: Jira login credentials unavailable. Click here!'
+    if not app.config['JIRA_PWD']:
+        return 'Cannot log to Jira. Click here!'
     else:
         try:
-            ucr = jira.JIRA(app.config['JIRA_URL'], basic_auth=(login, pwd))
+            ucr = jira.JIRA(app.config['JIRA_URL'], basic_auth=(app.config['JIRA_USER'],
+                                                                app.config['JIRA_PWD']))
         except:
-            return 'Error: Jira login failed. Click here!'
+            return 'Cannot log to Jira. Click here!'
         else:
             app.logger.info('Logged into JIRA')
             ucr.add_comment(app.config['JIRA_ISSUE'], comment)

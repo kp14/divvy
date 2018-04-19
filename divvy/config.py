@@ -21,6 +21,8 @@ class Config(object):
     SECRET_KEY = secrets.token_urlsafe(32)
     OLD_PMIDS_FILE = 'pmids_in_swissprot.txt'
     JIRA_URL = os.environ.get('JIRA_URL', 'https://not.defined')
+    JIRA_USER = ''
+    JIRA_PWD = ''
     PMID_REGEX = re.compile(r'PubMed=[0-9]+')
     CUR_REGEX = re.compile('\*\*Z[ABC] +[A-Z]{3}')
     HOST = '127.0.0.1'

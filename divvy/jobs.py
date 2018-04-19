@@ -268,7 +268,7 @@ def _files2delete():
 
 def _delete_obsolete_files():
     for file_model in _files2delete():
-        app.logger.info('Deleted file from db: {}'.format(file_model.path))
+        app.logger.info('Deleted file from db: {}'.format(file_model.filename))
         file_model.delete_instance(recursive=True)
 
 
