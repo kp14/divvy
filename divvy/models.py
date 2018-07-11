@@ -77,8 +77,8 @@ class File(MyBaseModel):
     filename = peewee.CharField(max_length=50)
     filetype = peewee.FixedCharField(max_length=3)
     checksum = peewee.CharField()
-    curator = peewee.ForeignKeyField(Curator, related_name='submitted_files')
-    folder = peewee.ForeignKeyField(Folder, related_name='files')
+    curator = peewee.ForeignKeyField(Curator, backref='submitted_files')
+    folder = peewee.ForeignKeyField(Folder, backref='files')
     entry_count = peewee.IntegerField()
     resubmission = peewee.BooleanField()
 
@@ -99,7 +99,7 @@ class Reference(MyBaseModel):
 
     """
     pmid = peewee.CharField(max_length=20)
-    sourcefile = peewee.ForeignKeyField(File, related_name='references', on_delete='CASCADE')
+    sourcefile = peewee.ForeignKeyField(File, backref='references', on_delete='CASCADE')
     is_new = peewee.BooleanField()
 
     def __unicode__(self):

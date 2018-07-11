@@ -3,6 +3,7 @@
 import getpass
 import netrc
 
+
 def get_jira_credentials(app):
     """Try to retrieve a user name and password for Jira.
 
@@ -15,6 +16,7 @@ def get_jira_credentials(app):
             print('Jira login credentials unavailable.')
             print('Assigned files can be manually copied.')
 
+
 def _get_jira_credentials_from_netrc(app):
     """Try to retrieve a user name and password for Jira from .netrc."""
     try:
@@ -24,8 +26,8 @@ def _get_jira_credentials_from_netrc(app):
         return False
     except OSError as e:
         print('A .netrc file could not be found.')
-        print(e.strerror)
-        return  False
+        print(e)
+        return False
     else:
         try:
             login, _, pwd = nrc.hosts[app.config['JIRA_URL']]
@@ -36,6 +38,7 @@ def _get_jira_credentials_from_netrc(app):
             app.config['JIRA_USER'] = login
             app.config['JIRA_PWD'] = pwd
             return True
+
 
 def _ask_for_credentials(app):
     """ Get system user name and ask for password."""
