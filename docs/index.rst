@@ -18,9 +18,7 @@ In a nutshell, the steps necessary to run this application are as follows:
 
 #. Pip install divvy and its dependencies. Divvy is packaged as a wheel and will install dependencies automatically.
 
-#. Optional: Provide Jira login credentials in a .netrc file. The file has be located in %HOME% or, if not present, %USERPROFILE%.
-   If no Jira credentials are provided, automated logging of assigned files to Jira will fail but the logging text can be
-   copied from within the web application, too.
+#. Optional: Provide Jira login credentials in a .netrc file.
 
 #. Create a directory to work in, e.g. F:\divvy.
 
@@ -30,16 +28,13 @@ In a nutshell, the steps necessary to run this application are as follows:
    :maxdepth: 2
 
    installation
-   api
-
-
+   dependencies
+   running
+   interface
 
 Indices and tables
 ==================
 
-
-* :ref:`genindex`
-* :ref:`modindex`
 * :ref:`search`
 
 
