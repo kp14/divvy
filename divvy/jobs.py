@@ -166,6 +166,25 @@ def _find_folder(pth):
     return folder_model_instance
 
 
+def _split2prefix_and_rest(line):
+    return line[:2], line[5:].rstrip()
+
+
+def _is_small_scale_reference(rp_tokens):
+    """Test whether a reference is small scale.
+
+    We do this by testing for the absence of the term large scale.
+
+    Args:
+        rp_tokens (list): a list of stripped RP lines
+
+    Returns:
+        bool
+    """
+    rp_line = ' '.join(rp_tokens)
+    return 'LARGE SCALE' not in rp_line
+
+
 def _extract_pmids(pth):
     """Extract PubMed IDs from entries.
 
@@ -176,37 +195,111 @@ def _extract_pmids(pth):
         list: List of dicts describing Reference model instances.
 
     """
-    rp_tmp = []
     pmid_set_tmp = set()
-    reference_model_list =[]
     with open(pth.path, 'r', encoding='latin1') as f:
+        rp_tmp = []
         for line in f:
-            prefix, rest = line[:2], line[5:].rstrip()
+            prefix, rest = _split2prefix_and_rest(line)
             if prefix == 'RP':
                 rp_tmp.append(rest)
-            if prefix == 'RL':
-                rp_tmp = []
-            if prefix == 'RX':
-                rp_line = ' '.join(rp_tmp)
-                if 'LARGE SCALE' in rp_line:
-                    app.logger.warn('Ignored LARGE SCALE ref: {}'.format(rest))
-                    app.logger.info('RP line for above reference: {}'.format(rp_line))
-                else:
-                    match = re.search(app.config['PMID_REGEX'], rest)
+            elif prefix == 'RC':
+                pass
+            elif prefix == 'RX':
+                if _is_small_scale_reference(rp_tmp):
+                    match = _search4pmid(rest)
                     if match:
-                        pmid = match.group(0)[7:]
+                        pmid = _extract_pmid_from_match(match)
                         pmid_set_tmp.add(pmid)
-    new_pmids = pmid_set_tmp.difference(app.config['OLD_PMIDS'])
-    known_pmids = pmid_set_tmp.intersection(app.config['OLD_PMIDS'])
+                else:
+                    app.logger.warn('Ignored LARGE SCALE ref: {}'.format(rest))
+                    app.logger.info('RP tokens for above reference: {}'.format(rp_tmp))
+            else:
+                rp_tmp = []
+    known_pmids, new_pmids = _compare_pmid_sets(pmid_set_tmp)
+    _log_known_pmids(known_pmids, pth)
+    reference_model_list = _compile_reference_models(new_pmids, known_pmids, pth)
+    return reference_model_list
+
+
+def _compile_reference_models(new_pmids, known_pmids, pth):
+    """Prepare a list of Reference model dicts which can be added to the DB.
+
+    Args:
+        new_pmids (set): gathered PMIDs which are not yet in Swiss-Prot
+        known_pmids (set): gathered PMIDs which are already in Swiss-Prot
+        th (path): path to a file
+
+    Returns:
+        list (Reference instances)
+    """
+    reference_model_list =[]
+    file_model_instance = _get_model_instance(pth)
+    for pmid in new_pmids:
+        reference_model_list.append(_prepare_reference_model_dict(file_model_instance, pmid, True))
+    for pmid in known_pmids:
+        reference_model_list.append(_prepare_reference_model_dict(file_model_instance, pmid, False))
+    return reference_model_list
+
+
+def _prepare_reference_model_dict(file_model_instance, pmid, is_new):
+    return {'pmid': pmid, 'sourcefile': file_model_instance.id, 'is_new': is_new}
+
+
+def _get_model_instance(pth):
+    """Return the File model instance for the given file.
+
+    Args:
+        pth (path): path to a file
+
+    Returns:
+        File model instance
+    """
+    file_model_instance = File.select().where(File.filename == pth.path.name).get()
+    return file_model_instance
+
+
+def _log_known_pmids(known_pmids, pth):
+    """Send info about known PMIDs for logging.
+
+    Args:
+        known_pmids (set): set of PMIDs extracted from files which are already in Swiss-Prot
+        pth (Path): path to file PMIDs were extracted from
+
+    Returns:
+         --
+    """
     if known_pmids:
         for item in known_pmids:
             app.logger.info('Found previously used PMID for file {0}: {1}'.format(pth.path, item))
-    file_model_instance = File.select().where(File.filename == pth.path.name).get()
-    for pmid in new_pmids:
-        reference_model_list.append({'pmid': pmid, 'sourcefile': file_model_instance.id, 'is_new': True})
-    for pmid in known_pmids:
-        reference_model_list.append({'pmid': pmid, 'sourcefile': file_model_instance.id, 'is_new': False})
-    return reference_model_list
+
+
+def _compare_pmid_sets(gathered_pmids):
+    """Set comparisons between gathered and kold PMIDs.
+
+    The old ones are loaded from hte config.
+
+    Args:
+        gathered_pmids (set): PMIDs extracted from file
+
+    Returns:
+        known_pmids (set): gathered PMIDs which are already in Swiss-Prot
+        new_pmids (set): gathered PMIDs which are not yet in Swiss-Prot
+    """
+    old_pmids = app.config.get('OLD_PMIDS', set())
+    new_pmids = gathered_pmids.difference(old_pmids)
+    known_pmids = gathered_pmids.intersection(old_pmids)
+    return known_pmids, new_pmids
+
+
+def _extract_pmid_from_match(match):
+    pmid = match.group(0)[7:]
+    return pmid
+
+
+def _search4pmid(line):
+    regex = app.config.get('PMID_REGEX', 'nonsensicalpattern')
+    match = re.search(regex, line)
+    return match
 
 
 def _extract_file_data(pth):
